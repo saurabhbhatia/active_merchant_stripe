@@ -72,6 +72,7 @@ The {ActiveMerchant Wiki}[http://github.com/Shopify/active_merchant/wikis] conta
 * {Verifi}[http://www.verifi.com/] - US
 * {ViaKLIX}[http://viaklix.com] - US
 * {Wirecard}[http://www.wirecard.com] - DE
+* {Stripe}[http://www.stripe.com] - US
 
 == Supported Offsite Payment Gateways
 
@@ -111,45 +112,26 @@ Installation from RubyGems
 
   > gem install activemerchant
 
-== Sample Usage
-  require 'rubygems'
-  require 'active_merchant'
+== Sample Usage in Rails Application
 
-  # Use the TrustCommerce test servers
+In environments/development.rb
+ 
+config.after_initialize do
   ActiveMerchant::Billing::Base.mode = :test
+  ::GATEWAY = ActiveMerchant::Billing::StripeGateway.new('Stripe API Key')
+end
 
-  # ActiveMerchant accepts all amounts as Integer values in cents
-  # $10.00
-  amount = 1000
+Controller 
 
-  # The card verification value is also known as CVV2, CVC2, or CID 
-  credit_card = ActiveMerchant::Billing::CreditCard.new(
-                  :first_name         => 'Bob',
-                  :last_name          => 'Bobsen',
-                  :number             => '4242424242424242',
-                  :month              => '8',
-                  :year               => '2012',
-                  :verification_value => '123'
-                )
+credit_card = {
+  :number => '4242424242424242',
+  :exp_month => 10,
+  :exp_year => 2011
+}
 
-  # Validating the card automatically detects the card type
-  if credit_card.valid?
+charge = GATEWAY.execute(:amount => 500, :currency => 'usd',
+                           :card => credit_card, :mnemonic => 'new')
 
-    # Create a gateway object for the TrustCommerce service
-    gateway = ActiveMerchant::Billing::TrustCommerceGateway.new(
-                :login => 'TestMerchant',
-                :password => 'password'
-              )
-
-    # Authorize for the amount
-    response = gateway.purchase(amount, credit_card)
-
-    if response.success?
-      puts "Successfully charged $#{sprintf("%.2f", amount / 100)} to the credit card #{credit_card.display_number}"
-    else
-      raise StandardError, response.message 
-    end
-  end
 
 == Contributing
 
